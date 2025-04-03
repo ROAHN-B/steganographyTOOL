@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
-from PIL import Image
 
-# Convert data to binary format
+# conversion data to binary format
 def data2binary(data):
     if isinstance(data, str):
         return ''.join(format(ord(i), '08b') for i in data)
@@ -10,9 +9,9 @@ def data2binary(data):
         return [format(i, '08b') for i in data]
     return None
 
-# Hide data in the given image
+# data hiding
 def hidedata(img, data):
-    data += "$$"  # Secret key
+    data += "$$"  # Secret key to indicate end of message
     d_index = 0
     b_data = data2binary(data)
     len_data = len(b_data)
@@ -22,13 +21,13 @@ def hidedata(img, data):
         for pix in value:
             r, g, b = data2binary(pix)
             if d_index < len_data:
-                pix[0] = int(r[:-1] + b_data[d_index], 2)  # Update red channel
+                pix[0] = int(r[:-1] + b_data[d_index], 2)  # red channel
                 d_index += 1
             if d_index < len_data:
-                pix[1] = int(g[:-1] + b_data[d_index], 2)  # Update green channel
+                pix[1] = int(g[:-1] + b_data[d_index], 2)  # green channel
                 d_index += 1
             if d_index < len_data:
-                pix[2] = int(b[:-1] + b_data[d_index], 2)  # Update blue channel
+                pix[2] = int(b[:-1] + b_data[d_index], 2)  # blue channel
                 d_index += 1
             if d_index >= len_data:
                 break
@@ -46,6 +45,7 @@ def encode():
     enc_img = input("\nEnter encoded image name: ")
     enc_data = hidedata(image, data)
     cv2.imwrite(enc_img, enc_data)
+    print(f"Encoded image saved as: {enc_img}")
 
 # Decoding
 def find_data(img):
@@ -62,35 +62,43 @@ def find_data(img):
     readable_data = ""
     for x in all_bytes:
         readable_data += chr(int(x, 2))
-        if readable_data[-2:] == "$$":
+        if readable_data[-2:] == "$$":  # Check for end of message
             break
-    return readable_data[:-2]
+    return readable_data[:-2]  # Remove the delimiter
 
 def decode():
     img_name = input("\nEnter image name: ")
     image = cv2.imread(img_name)
     if image is None:
         print("Error: Image not found.")
-        return
+        return None  # Return None if the image is not found
     msg = find_data(image)
-    return msg
+    return msg  # Return the decoded message
 
 def steganography():
     while True:
         print('''\nImage Steganography
         1. Encode
         2. Decode''')
-        u_in = int(input("\nEnter your choice: "))
-        if u_in == 1:
-            encode()
-        elif u_in == 2:
-            ans = decode()
-            print("\nYour message: " + ans)
-        else:
-            print("Invalid choice. Please select 1 or 2.")
-        
-        cont = int(input("\nEnter 1 to continue, otherwise 0: "))
-        if cont == 0:
+        try:
+            u_in = int(input("\nEnter your choice: "))
+            if u_in == 1:
+                encode()
+            elif u_in == 2:
+                ans = decode()
+                if ans is not None:  # Check if a message was returned
+                    print("\nYour message: " + ans)
+                else:
+                    print("\nNo message found or an error occurred.")
+            else:
+                print("Invalid choice. Please select 1 or 2.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+        cont = input("\nEnter 1 to continue, otherwise 0: ")
+        if cont != '1':
             break
 
-steganography()
+
+if __name__ == "__main__":
+    steganography()
